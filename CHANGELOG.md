@@ -1,5 +1,13 @@
 # CHANGELOG
 
+# 9.1.3
+
++ Fix to allow for overriding request type for data (#80).
+
+# 9.1.2
+
++ Oauth error handling (#77).
+
 # 9.1.1
 
 + Implemented `Iterable` and `Countable` on `ResponseAccess`

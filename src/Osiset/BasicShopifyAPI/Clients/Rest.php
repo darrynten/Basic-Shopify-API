@@ -3,9 +3,10 @@
 namespace Osiset\BasicShopifyAPI\Clients;
 
 use Exception;
-use Osiset\BasicShopifyAPI\ResponseAccess;
 use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
+use Osiset\BasicShopifyAPI\ResponseAccess;
 use Osiset\BasicShopifyAPI\Clients\AbstractClient;
 use Osiset\BasicShopifyAPI\Contracts\RestRequester;
 
@@ -46,17 +47,25 @@ class Rest extends AbstractClient implements RestRequester
         }
 
         // Do a JSON POST request to grab the access token
-        $response = $this->getClient()->request(
-            'POST',
-            $this->getBaseUri()->withPath('/admin/oauth/access_token'),
-            [
-                'json' => [
-                    'client_id'     => $this->getOptions()->getApiKey(),
-                    'client_secret' => $this->getOptions()->getApiSecret(),
-                    'code'          => $code,
-                ],
+        $url = $this->getBaseUri()->withPath('/admin/oauth/access_token');
+        $data = [
+            'json' => [
+                'client_id'     => $this->getOptions()->getApiKey(),
+                'client_secret' => $this->getOptions()->getApiSecret(),
+                'code'          => $code,
             ]
-        );
+        ];
+
+        try {
+            $response = $this->getClient()->request(
+                'POST',
+                $url,
+                $data
+            );
+        } catch (ClientException $e) {
+            $body = json_decode($e->getResponse()->getBody()->getContents());
+            throw new Exception($body->error_description);
+        }
 
         return $this->toResponse($response->getBody());
     }
@@ -102,7 +111,14 @@ class Rest extends AbstractClient implements RestRequester
         // Build the request parameters for Guzzle
         $guzzleParams = [];
         if ($params !== null) {
-            $guzzleParams[strtoupper($type) === 'GET' ? 'query' : 'json'] = $params;
+            $keys = array_keys($params);
+            if (isset($keys[0]) && in_array($keys[0], ['query', 'json'])) {
+                // Inputted type
+                $guzzleParams = $params;
+            } else {
+                // Detect type
+                $guzzleParams[strtoupper($type) === 'GET' ? 'query' : 'json'] = $params;
+            }
         }
 
         // Add custom headers
