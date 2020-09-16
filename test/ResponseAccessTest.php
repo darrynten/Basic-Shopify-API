@@ -3,7 +3,6 @@
 namespace Osiset\BasicShopifyAPI\Test;
 
 use Osiset\BasicShopifyAPI\ResponseAccess;
-use Osiset\BasicShopifyAPI\Test\BaseTest;
 
 class ResponseAccessTest extends BaseTest
 {
@@ -95,5 +94,19 @@ class ResponseAccessTest extends BaseTest
         ]);
 
         $this->assertEquals(json_encode(['names' => $names]), json_encode($resp));
+    }
+
+    public function testToArray(): void
+    {
+        $names = [
+            'names' => [
+                'John',
+                'Tim',
+                'Tommy',
+            ],
+        ];
+        $resp = new ResponseAccess($names);
+
+        $this->assertEquals($names, $resp->toArray());
     }
 }
